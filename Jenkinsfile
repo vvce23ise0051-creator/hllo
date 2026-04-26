@@ -7,21 +7,25 @@ pipeline {
 
     stages {
 
-        stage('Build Docker Image') {
-            steps {
-                bat 'docker build -t %DOCKER_IMAGE% .'
-            }
-        }
-
         stage('Login to DockerHub') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: 'dockerr-creds',
+                    credentialsId: 'docker-cred',
                     usernameVariable: 'USER',
                     passwordVariable: 'PASS'
                 )]) {
-                    bat 'echo %PASS% | docker login -u %USER% --password-stdin'
+                    bat '''
+                    echo %PASS%> pass.txt
+                    type pass.txt | docker login -u %USER% --password-stdin
+                    del pass.txt
+                    '''
                 }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                bat 'docker build -t %DOCKER_IMAGE% .'
             }
         }
 
@@ -30,6 +34,5 @@ pipeline {
                 bat 'docker push %DOCKER_IMAGE%'
             }
         }
-
     }
 }
